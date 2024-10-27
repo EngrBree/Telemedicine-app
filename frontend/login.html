@@ -1,0 +1,27 @@
+<form onsubmit="handleLogin(event)">
+    <input type="text" id="identifier" placeholder="Email or Username" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button type="submit">Login</button>
+</form>
+
+<script>
+    async function handleLogin(event) {
+        event.preventDefault();
+        const identifier = document.getElementById('identifier').value;
+        const password = document.getElementById('password').value;
+
+        const response = await fetch('/telemedicine/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identifier, password })
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+            // Redirect based on the server's response
+            window.location.href = result.redirectUrl;
+        } else {
+            alert(result.message);
+        }
+    }
+</script>

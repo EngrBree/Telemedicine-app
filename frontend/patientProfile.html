@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard</title>
+    <style>
+        /* General styles (same as before) */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .navbar {
+            background-color: #333;
+            color: #fff;
+            padding: 10px;
+            text-align: right;
+        }
+
+        .navbar a {
+            color: white;
+            padding: 10px;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+
+        .navbar a:hover {
+            background-color: #575757;
+            border-radius: 5px;
+        }
+
+        .container {
+            margin: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+        }
+
+        .welcome {
+            margin-top: 20px;
+        }
+
+        .appointments {
+            margin-top: 30px;
+        }
+
+        .appointments h2 {
+            display: inline-block;
+        }
+
+        .add-appointment {
+            float: right;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .add-appointment:hover {
+            background-color: #218838;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #333;
+            color: white;
+        }
+
+        td {
+            text-align: center;
+        }
+
+        .actions button {
+            padding: 5px 10px;
+            margin: 2px;
+            cursor: pointer;
+        }
+
+        .edit-btn {
+            background-color: #ffc107;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        /* Modal styling */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    width: 600px;  /* Increase width */
+    max-height: 700px;  /* Set maximum height */
+    overflow-y: auto;  /* Add scrolling for content */
+}
+
+        .modal-content label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        .modal-content input, .modal-content select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border-radius: 4px;
+            max-height: 200px; /* Allow enough space for scrolling */
+            overflow:visible; 
+
+        }
+
+        .modal-content button {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+     
+
+ 
+
+        .modal-content button:hover {
+            background-color: #218838;
+        }
+
+        .close-btn {
+            float: right;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <a href="index.html">Home</a>
+        <a href="#" id="profile-btn">Profile</a>
+
+        <a href="#" id="logout-btn">Logout</a>
+    </div>
+
+    <div class="container">
+        <h1 class="welcome">Welcome, <span id="username"></span></h1>
+
+        <div class="appointments">
+            <h2>Your Appointments</h2>
+            <button class="add-appointment" id="add-appointment-btn">Add Appointment</button>
+
+            <table id="appointments-table">
+                <thead>
+                    <tr>
+                        <th>Appointment Date</th>
+                        <th>Appointment Time</th>
+                        <th>Doctor</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="appointments-list">
+                    <!-- Dynamic rows will be inserted here -->
+                </tbody>
+            </table>
+
+            <!-- If no appointments -->
+            <p id="no-appointments-message" style="display:none;">No appointments yet</p>
+
+        </div>
+    </div>
+
+    <!-- Modal for adding an appointment -->
+    <div class="modal" id="appointment-modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-modal">&times;</span>
+            <h2>Add New Appointment</h2>
+            <form id="appointment-form">
+                <label for="appointment-date">Appointment Date:</label>
+                <input type="date" id="appointment-date" required>
+
+                <label for="appointment-time">Appointment Time:</label>
+                <input type="time" id="appointment-time" required>
+
+                <label for="doctor-id">Doctor:</label>
+                <select id="doctor-id" required>
+                    <option value="" disabled selected>Select a doctor</option>
+                    <!-- Option values should be dynamically populated here -->
+                </select>
+                <p id="no-doctors-message" style="display:none; color: red;">No doctors available</p>
+
+
+                <button type="submit">Create Appointment</button>
+            </form>
+        </div>
+    </div>
+    <!-- Modal for viewing and editing the profile -->
+<div class="modal" id="profile-modal">
+    <div class="modal-content">
+        <span class="close-btn" id="close-profile-modal">&times;</span>
+        <h2>Edit Profile</h2>
+        <form id="profile-form">
+            <label for="first-name">First Name:</label>
+            <input type="text" id="first-name" required>
+
+            <label for="last-name">Last Name:</label>
+            <input type="text" id="last-name" required>
+
+            <label for="email">Email:</label>
+            <input type="email" id="email" required>
+
+            <label for="phone">Phone Number:</label>
+            <input type="tel" id="phone" required>
+            
+            <label for="date_of_birth">DOB:</label>
+            <input type="date" id="date_of_birth" required>
+            
+            <label for="gender">Gender:</label>
+            <input type="text" id="gender" required>
+            
+            <label for="address">Address:</label>
+            <input type="text" id="address" required>
+            
+
+            <button type="submit">Save Changes</button>
+        </form>
+    </div>
+</div>
+
+
+    <script>
+        
+        document.addEventListener('DOMContentLoaded', function () {
+            fetchUserData();
+            fetchAppointments();
+
+            // Show the modal when 'Add Appointment' is clicked
+            const addAppointmentBtn = document.getElementById('add-appointment-btn');
+            const modal = document.getElementById('appointment-modal');
+            const closeModalBtn = document.getElementById('close-modal');
+
+            addAppointmentBtn.addEventListener('click', function () {
+                modal.style.display = 'flex'; // Show modal
+                fetchDoctors(); // Fetch available doctors to fill the select dropdown
+            });
+
+            // Close the modal when the 'X' is clicked
+            closeModalBtn.addEventListener('click', function () {
+                modal.style.display = 'none';
+            });
+
+            // Submit the appointment form
+            const appointmentForm = document.getElementById('appointment-form');
+            appointmentForm.addEventListener('submit', function (event) {
+                event.preventDefault(); // Prevent the form from submitting normally
+
+                const appointmentDate = document.getElementById('appointment-date').value;
+                const appointmentTime = document.getElementById('appointment-time').value;
+                const doctorId = document.getElementById('doctor-id').value;
+
+                // Create appointment data object
+                const appointmentData = {
+                    patient_id:patientId,
+                    appointment_date: appointmentDate,
+                    appointment_time: appointmentTime,
+                    doctor_id: doctorId
+                };
+
+                // Send POST request to create a new appointment
+                fetch('/telemedicine/api/patients/createSchedule', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(appointmentData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to create appointment');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    modal.style.display = 'none'; // Close the modal
+                    fetchAppointments(); // Refresh appointments list
+                })
+                .catch(error => {
+                    console.error('Error creating appointment:', error);
+                });
+            });
+        });
+
+        // Fetch available doctors and populate the dropdown
+  // Fetch available doctors and populate the dropdown
+function fetchDoctors() {
+    fetch('/telemedicine/api/admins/doctorsearch', {
+    method: 'GET',
+    credentials: 'include', // Include cookies with the request
+    headers: {
+        'Content-Type': 'application/json'
+    }
+}) // Make sure this URL is correct
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(doctors => {
+            console.log('Doctors data:', doctors); // Log the fetched doctors data
+
+            const doctorSelect = document.getElementById('doctor-id');
+            doctorSelect.innerHTML = ''; // Clear existing options
+
+            // Check if doctors array is empty
+            if (!Array.isArray(doctors) || doctors.length === 0) {
+                console.error('No doctors available');
+                document.getElementById('no-doctors-message').style.display = 'block'; // Display message
+                return; // Exit the function if no doctors are found
+            } else {
+                document.getElementById('no-doctors-message').style.display = 'none'; // Hide message if doctors are found
+            }
+
+            doctors.forEach(doctor => {
+                const option = document.createElement('option');
+                option.value = doctor.id;
+                option.textContent = doctor.name;
+                doctorSelect.appendChild(option);
+            });
+
+            // Log to confirm select element is populated
+            console.log('Doctor select options:', doctorSelect.innerHTML);
+        })
+        .catch(error => console.error('Error fetching doctors:', error));
+}
+
+
+
+
+        // Fetch user profile (for username)
+        let patientId;
+        function fetchUserData() {
+            fetch('/telemedicine/api/patients/profile') // Adjust the API endpoint
+                .then(response => response.json())
+                .then(data => {
+                    // Update the username display
+                    document.getElementById('username').textContent = data.first_name;
+                    patientId = data.id; 
+
+                })
+                .catch(error => console.error('Error fetching user data:', error));
+        }
+
+        // Fetch appointments data (same as before)
+        function fetchAppointments() {
+    fetch('/telemedicine/api/patients/schedules') // Adjust the API endpoint if necessary
+        .then(response => {
+            // Check if the response is successful
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Fetched data:", data); // Log the response to check its structure
+            
+            const appointmentsList = document.getElementById('appointments-list');
+            const noAppointmentsMessage = document.getElementById('no-appointments-message');
+
+            // Check if data is an array and has appointments
+            if (!Array.isArray(data) || data.length === 0) {
+                noAppointmentsMessage.style.display = 'block';
+                appointmentsList.innerHTML = ''; // Clear the list if no appointments
+                return;
+            } else {
+                noAppointmentsMessage.style.display = 'none';
+            }
+
+            // Clear existing table rows
+            appointmentsList.innerHTML = '';
+
+            // Populate appointments table
+            data.forEach(appointment => {
+                const row = document.createElement('tr');
+
+                row.innerHTML = `
+                    <td>${appointment.appointment_date}</td>
+                    <td>${appointment.appointment_time}</td>
+                    <td>${appointment.doctor_name || 'Doctor not assigned'}</td>
+                    <td>${appointment.status}</td>
+                    <td class="actions">
+                        <button class="edit-btn">Edit</button>
+                        <button class="delete-btn">Delete</button>
+                    </td>
+                `;
+
+                appointmentsList.appendChild(row);
+            });
+        })
+        .catch(error => console.error('Error fetching appointments:', error));
+}
+
+
+        document.addEventListener('DOMContentLoaded', function () {
+    // Profile modal elements
+    const profileBtn = document.getElementById('profile-btn');
+ // Adjust the selector for your profile link
+    const profileModal = document.getElementById('profile-modal');
+    const closeProfileModalBtn = document.getElementById('close-profile-modal');
+    
+    // Open the profile modal when "Profile" is clicked
+    profileBtn.addEventListener('click', function (event) {
+        event.preventDefault();
+        profileModal.style.display = 'flex'; // Show modal
+        fetchUserProfile(); // Fetch the current user's profile data
+    });
+
+    // Close the profile modal
+    closeProfileModalBtn.addEventListener('click', function () {
+        profileModal.style.display = 'none';
+    });
+
+    // Fetch user profile data and pre-fill the form
+    function fetchUserProfile() {
+        fetch('/telemedicine/api/patients/profile')
+            .then(response => response.json())
+            .then(data => {
+                // Populate the form fields with the fetched data
+                document.getElementById('first-name').value = data.first_name;
+                document.getElementById('last-name').value = data.last_name;
+                document.getElementById('email').value = data.email;
+                document.getElementById('phone').value = data.phone;
+                document.getElementById('date_of_birth').value,
+                document.getElementById('gender').value,
+                document.getElementById('address').value
+            })
+            .catch(error => console.error('Error fetching profile data:', error));
+    }
+
+    // Handle profile form submission
+    const profileForm = document.getElementById('profile-form');
+    profileForm.addEventListener('submit', function (event) {
+        event.preventDefault(); // Prevent the form from submitting normally
+
+        // Gather the updated profile data
+        const updatedProfileData = {
+            first_name: document.getElementById('first-name').value,
+            last_name: document.getElementById('last-name').value,
+            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value,
+            date_of_birth:document.getElementById('date_of_birth').value,
+            gender:document.getElementById('gender').value,
+            address:document.getElementById('address').value
+
+        };
+
+        // Send POST request to update the profile
+        fetch('/telemedicine/api/patients/profile/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedProfileData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to update profile');
+            }
+            return response.json();
+        })
+        .then(data => {
+            profileModal.style.display = 'none'; // Close the modal
+            // Optionally refresh the displayed profile info
+            fetchUserData();
+        })
+        .catch(error => {
+            console.error('Error updating profile:', error);
+        });
+    });
+});
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        .dashboard {
+            text-align: center;
+            margin-top: 50px;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <ul>
+            <li><a href="/doctorsDashboard.html">Doctors</a></li>
+            <li><a href="/patientsDashboard.html">Patients</a></li>
+            <li><a href="/appointDashboard.html">Appointments</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="dashboard">
+        <h1>Welcome, <span id="username">Admin</span></h1>
+        <div class="stats">
+            <div>
+                <h2>Doctors</h2>
+                <p id="doctor-count">0</p>
+            </div>
+            <div>
+                <h2>Patients</h2>
+                <p id="patient-count">0</p>
+            </div>
+            <div>
+                <h2>Appointments</h2>
+                <p id="appointment-count">0</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fetch dashboard data from the server
+        fetch('/telemedicine/api/admins/dashboard')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('username').textContent = data.username;
+                document.getElementById('doctor-count').textContent = data.doctors;
+                document.getElementById('patient-count').textContent = data.patients;
+                document.getElementById('appointment-count').textContent = data.appointments;
+            })
+            .catch(error => console.error('Error fetching dashboard data:', error));
+    </script>
+
+</body>
+</html>

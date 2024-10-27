@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Patient Dashboard</title>
+    <style>
+        /* Basic styling for the dashboard */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        input, select {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Admin Patient Dashboard</h1>
+
+    <!-- Search and Filter Section -->
+    <form id="searchForm">
+        <input type="text" id="search" name="search" placeholder="Search by name">
+        <select id="filter" name="filter">
+            <option value="all">All</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+        </select>
+        <select id="gender" name="gender">
+            <option value="all">All Genders</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+        </select>
+        <button type="submit">Search</button>
+    </form>
+
+    <!-- Patient List Table -->
+    <table id="patientsTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Date of Birth</th>
+                <th>Gender</th>
+               
+                <th>Address</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Patient data will be inserted here -->
+        </tbody>
+    </table>
+
+    <script>
+        // Fetch and display patient data
+        document.getElementById('searchForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const search = document.getElementById('search').value;
+            const filter = document.getElementById('filter').value;
+            const gender = document.getElementById('gender').value;
+            const url = `/telemedicine/api/admins/patientdash?search=${search}&filter=${filter}&gender=${gender}`;
+
+            try {
+                const response = await fetch(url);
+                const patients = await response.json();
+                
+                // Update the patient table with new data
+                const tbody = document.getElementById('patientsTable').querySelector('tbody');
+                tbody.innerHTML = '';  // Clear previous data
+                
+                patients.forEach(patient => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${patient.id}</td>
+                        <td>${patient.first_name}</td>
+                        <td>${patient.last_name}</td>
+                        <td>${patient.email}</td>
+                        <td>${patient.phone}</td>
+                        <td>${patient.date_of_birth}</td>
+                        <td>${patient.gender}</td>
+                       
+                        <td>${patient.address}</td>
+                        <td><button>View</button></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error fetching patients:', error);
+            }
+        });
+
+        // Trigger the search form submission on page load to show all patients initially
+        document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+    </script>
+</body>
+</html>

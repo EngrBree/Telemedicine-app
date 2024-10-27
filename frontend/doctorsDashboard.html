@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Doctor Dashboard</title>
+    <style>
+        /* Basic styling for the dashboard */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        input, select {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Admin Doctor Dashboard</h1>
+
+    <!-- Search and Filter Section -->
+    <form id="searchForm">
+        <input type="text" id="search" name="search" placeholder="Search by name">
+        <input type="text" id="specialization" name="specialization" placeholder="Filter by specialization">
+        <button type="submit">Search</button>
+    </form>
+
+    <!-- Doctor List Table -->
+    <table id="doctorsTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Specialization</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Schedule</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Doctor data will be inserted here -->
+        </tbody>
+    </table>
+
+    <!-- Add Doctor Form -->
+    <h2>Add New Doctor</h2>
+    <form id="addDoctorForm">
+        <input type="text" id="first_name" name="first_name" placeholder="First Name" required>
+        <input type="text" id="last_name" name="last_name" placeholder="Last Name" required>
+        <input type="text" id="specialization" name="specialization" placeholder="Specialization" required>
+        <input type="email" id="email" name="email" placeholder="Email" required>
+        <input type="text" id="phone" name="phone" placeholder="Phone" required>
+        <input type="password" id="password" name="password" placeholder="Password" required>
+
+        <h3>Doctor Schedule</h3>
+        <div id="scheduleContainer">
+            <!-- Dynamic schedule entries will appear here -->
+        </div>
+        <button type="button" onclick="addDay()">Add Day</button>
+        <br><br>
+        <button type="submit">Add Doctor</button>
+    </form>
+
+    <script>
+        // Function to add a new day with a time slot input
+        function addDay() {
+            const container = document.getElementById('scheduleContainer');
+
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'day-entry';
+
+            const dayLabel = document.createElement('label');
+            dayLabel.textContent = 'Day: ';
+            const dayInput = document.createElement('input');
+            dayInput.type = 'text';
+            dayInput.name = 'day';
+            dayInput.placeholder = 'e.g., Monday';
+            dayInput.required = true;
+
+            const addTimeButton = document.createElement('button');
+            addTimeButton.type = 'button';
+            addTimeButton.textContent = 'Add Time Slot';
+            addTimeButton.onclick = () => addTimeSlot(dayDiv);
+
+            const timeContainer = document.createElement('div');
+            timeContainer.className = 'time-container';
+
+            dayDiv.appendChild(dayLabel);
+            dayDiv.appendChild(dayInput);
+            dayDiv.appendChild(addTimeButton);
+            dayDiv.appendChild(timeContainer);
+
+            container.appendChild(dayDiv);
+        }
+
+        function addTimeSlot(dayDiv) {
+            const timeContainer = dayDiv.querySelector('.time-container');
+
+            const timeInput = document.createElement('input');
+            timeInput.type = 'text';
+            timeInput.name = 'time';
+            timeInput.placeholder = 'e.g., 09:00-12:00';
+            timeInput.required = true;
+
+            timeContainer.appendChild(timeInput);
+        }
+
+        async function fetchDoctors() {
+            try {
+                const response = await fetch('/telemedicine/api/admins/doctorsearch');
+                const doctors = await response.json();
+
+                const tbody = document.getElementById('doctorsTable').querySelector('tbody');
+                tbody.innerHTML = '';
+
+                doctors.forEach(doctor => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${doctor.id}</td>
+                        <td>${doctor.first_name}</td>
+                        <td>${doctor.last_name}</td>
+                        <td>${doctor.specialization}</td>
+                        <td>${doctor.email}</td>
+                        <td>${doctor.phone}</td>
+                        <td>${JSON.stringify(doctor.schedule, null, 2)}</td>
+                        <td><button>View</button></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error fetching doctors:', error);
+            }
+        }
+
+        document.getElementById('searchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            fetchDoctors();
+        });
+
+        document.getElementById('addDoctorForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const data = {
+                first_name: formData.get('first_name'),
+                last_name: formData.get('last_name'),
+                specialization: formData.get('specialization'),
+                email: formData.get('email'),
+                phone: formData.get('phone'),
+                password: formData.get('password'),
+                schedule: {}
+            };
+
+            const dayEntries = document.querySelectorAll('.day-entry');
+            dayEntries.forEach(dayEntry => {
+                const day = dayEntry.querySelector('input[name="day"]').value;
+                const timeSlots = Array.from(dayEntry.querySelectorAll('input[name="time"]')).map(input => input.value);
+                if (day && timeSlots.length > 0) {
+                    data.schedule[day] = timeSlots;
+                }
+            });
+
+            try {
+                const response = await fetch('/telemedicine/api/admins/doctordash', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+
+                const result = await response.json();
+                alert(result.message);
+                fetchDoctors();
+            } catch (error) {
+                console.error('Error adding doctor:', error);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', fetchDoctors);
+    </script>
+</body>
+</html>
