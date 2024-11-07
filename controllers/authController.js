@@ -44,7 +44,7 @@ module.exports = {
             if (user.role === 'doctor') {
                 return res.json({ redirectUrl: '/doctorProfile.html' });
             } else if (user.role === 'patient') {
-                return res.json({ redirectUrl: '/patientProfile.html' });
+                return res.json({ redirectUrl: '/bri.html' });
             } else if (user.role === 'admin') {
                 return res.json({ redirectUrl: '/adminProfile.html' });
             } else {

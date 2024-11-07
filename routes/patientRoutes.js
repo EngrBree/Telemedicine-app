@@ -13,7 +13,7 @@ router.post('/register', patientController.registerPatient);
 
 // Profile routes
 router.get('/profile', patientController.viewProfile);
-router.post('/edit-profile', patientController.editProfile);
+router.put('/edit-profile', patientController.editProfile);
 router.post('/appointments/schedule', patientController.scheduleAppointment);
 
 // Route to get all appointments for the logged-in patient
@@ -61,6 +61,21 @@ router.get('/dashboard',isAuthenticated, (req, res) => {
     console.log(req.session.user);
     
     res.sendFile('frontend/patientProfile.html'); // Replace with actual dashboard rendering
+});
+
+
+router.post('/logout', (req, res) => {
+  // If you're using sessions
+  req.session.destroy(err => {
+      if (err) {
+          return res.status(500).json({ message: 'Failed to logout' });
+      }
+      // Logout success
+      res.status(200).json({ message: 'Logged out successfully' });
+  });
+
+  // If you're using tokens (e.g., JWT), just clear the token from the client-side
+  // res.status(200).json({ message: 'Logged out successfully' });
 });
 
 

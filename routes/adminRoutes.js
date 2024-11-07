@@ -74,9 +74,6 @@ router.post('/doctordash', async (req, res) => {
             return res.status(400).json({ message: "Password is required" });
         }
 
-        // Validate and parse schedule as JSON
-        const parsedSchedule = JSON.stringify(schedule);
-
         // Hash the password
         const saltRounds = 10;
         const password_hash = await bcrypt.hash(password, saltRounds);
@@ -85,41 +82,64 @@ router.post('/doctordash', async (req, res) => {
         db.beginTransaction((err) => {
             if (err) throw err;
 
-            // Insert doctor into the doctors table
-            const doctorQuery = 'INSERT INTO doctors (first_name, last_name, specialization, email, phone, schedule, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?)';
-            const doctorValues = [first_name, last_name, specialization, email, phone, parsedSchedule, password_hash];
+            // Insert the doctor as a user in the users table
+            const userQuery = 'INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)';
+            const userValues = [email, password_hash, 'doctor'];
 
-            db.query(doctorQuery, doctorValues, (err, result) => {
+            db.query(userQuery, userValues, (err, result) => {
                 if (err) {
                     return db.rollback(() => {
                         throw err;
                     });
                 }
 
-                // Get the doctorId for future use (if needed)
-                const doctorId = result.insertId;
+                // Get the userId to link with the doctor record
+                const userId = result.insertId;
 
-                // Insert the user's credentials into the users table
-                const userQuery = 'INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)';
-                const userValues = [email, password_hash, 'doctor']; // Assuming 'doctor' is the role for doctors
+                // Insert doctor details into the doctors table
+                const doctorQuery = 'INSERT INTO doctors (first_name, last_name, specialization, email, phone, password_hash, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)';
+                const doctorValues = [first_name, last_name, specialization, email, phone, password_hash, userId];
 
-                db.query(userQuery, userValues, (err, result) => {
+                db.query(doctorQuery, doctorValues, (err, result) => {
                     if (err) {
                         return db.rollback(() => {
                             throw err;
                         });
                     }
 
-                    // Commit the transaction
-                    db.commit((err) => {
-                        if (err) {
+                    // Get the doctorId for future use (if needed)
+                    const doctorId = result.insertId;
+
+                    // Insert schedule data
+                    const schedulePromises = schedule.map(({ day_of_week, start_time, end_time }) => {
+                        return new Promise((resolve, reject) => {
+                            const scheduleQuery = 'INSERT INTO doctor_schedules (doctor_id, day_of_week, start_time, end_time) VALUES (?, ?, ?, ?)';
+                            const scheduleValues = [doctorId, day_of_week, start_time, end_time];
+
+                            db.query(scheduleQuery, scheduleValues, (err) => {
+                                if (err) return reject(err);
+                                resolve();
+                            });
+                        });
+                    });
+
+                    Promise.all(schedulePromises)
+                        .then(() => {
+                            // Commit the transaction
+                            db.commit((err) => {
+                                if (err) {
+                                    return db.rollback(() => {
+                                        throw err;
+                                    });
+                                }
+                                res.json({ message: 'Doctor added successfully', doctorId, userId });
+                            });
+                        })
+                        .catch((err) => {
                             return db.rollback(() => {
                                 throw err;
                             });
-                        }
-
-                        res.json({ message: 'Doctor added successfully', doctorId });
-                    });
+                        });
                 });
             });
         });
@@ -131,25 +151,57 @@ router.post('/doctordash', async (req, res) => {
 
 router.get('/doctorsearch', async (req, res) => {
     try {
-        const { search = '', specialization = '' } = req.query;  // Get search and specialization from query params
+        const { search = '', specialization = '' } = req.query;
 
-        // Basic query to fetch all doctors
-        let query = 'SELECT * FROM doctors WHERE 1=1';
+        // Modified query to join doctors and doctor_schedules tables
+        let query = `
+            SELECT d.id, d.first_name, d.last_name, d.specialization, d.email, d.phone,
+                   s.day_of_week, s.start_time, s.end_time
+            FROM doctors d
+            LEFT JOIN doctor_schedules s ON d.id = s.doctor_id
+            WHERE 1=1
+        `;
 
         // Add search functionality for first name or last name
         if (search) {
-            query += ` AND (first_name LIKE '%${search}%' OR last_name LIKE '%${search}%')`;
+            query += ` AND (d.first_name LIKE '%${search}%' OR d.last_name LIKE '%${search}%')`;
         }
 
         // Add filtering based on specialization
         if (specialization) {
-            query += ` AND specialization LIKE '%${specialization}%'`;
+            query += ` AND d.specialization LIKE '%${specialization}%'`;
         }
 
         // Execute the query
         db.query(query, (err, results) => {
             if (err) throw err;
-            res.json(results);  // Send the doctor data as a JSON response
+
+            // Group schedules by doctor
+            const doctors = results.reduce((acc, row) => {
+                const doctorId = row.id;
+                if (!acc[doctorId]) {
+                    acc[doctorId] = {
+                        id: doctorId,
+                        first_name: row.first_name,
+                        last_name: row.last_name,
+                        specialization: row.specialization,
+                        email: row.email,
+                        phone: row.phone,
+                        schedule: []
+                    };
+                }
+                if (row.day_of_week) {
+                    acc[doctorId].schedule.push({
+                        day_of_week: row.day_of_week,
+                        start_time: row.start_time,
+                        end_time: row.end_time
+                    });
+                }
+                return acc;
+            }, {});
+
+            // Send the doctor data as a JSON response
+            res.json(Object.values(doctors));
         });
     } catch (error) {
         console.error('Error fetching doctor data:', error);

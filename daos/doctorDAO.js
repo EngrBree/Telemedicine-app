@@ -26,17 +26,11 @@ const findDoctorByEmail = (email, callback) => {
     });
 };
 
-// Get doctor by ID
 const findDoctorById = (id, callback) => {
-    const sql = 'SELECT * FROM doctors WHERE id = ?';
-    db.query(sql, [id], (err, results) => {
-        if (err) {
-            console.error('Error finding doctor by ID:', err);
-            return callback(err);
-        }
-        callback(null, results);
-    });
-};
+    const query = `SELECT * FROM doctors WHERE id = ?`;
+    db.query(query, [id], callback);
+  };
+  
 
 // Update doctor information
 const updateDoctor = (id, updatedData, callback) => {

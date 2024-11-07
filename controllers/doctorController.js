@@ -3,30 +3,25 @@ const doctorDAO = require('../daos/doctorDAO');
 const userDAO = require('../daos/userDAO'); // Import the userDAO to manage users
 
 
-// View Doctor Profile
 const viewProfile = (req, res) => {
-    console.log(req.session)
-    // Check if the user session exists and contains the doctor ID
-    if (!req.session || !req.session.user || !req.session.user.id) {
-        return res.status(401).json({ message: 'Unauthorized: Please log in.' });
+    console.log('Session ID: ', req.sessionID);
+    if (!req.session.user) {
+        return res.status(401).json({ error: 'User not logged in or session expired' });
     }
 
-    const doctorId = req.session.user.id;
-
-    // Fetch doctor details from the database using doctorDAO
-    doctorDAO.findDoctorById(doctorId, (err, results) => {
-        if (err) {
-            return res.status(500).json({ message: 'Error retrieving doctor profile' });
-        }
-
-        if (results.length === 0) {
-            return res.status(404).json({ message: 'Doctor not found' });
-        }
-
-        // Send doctor details as a JSON response
-        res.json(results[0]);
+    const userId = req.session.user.id;
+    
+    doctorDAO.findDoctorById(userId, (err, results) => {
+      if (err) throw err;
+      if (results.length === 0) {
+        return res.status(404).json({ message: 'doctor not found' });
+      }
+      
+      const patient = results[0];
+      // Respond with JSON instead of sending an HTML file
+      res.json(doctor);
     });
-};
+  };
 
 // Edit Profile
 const editProfile = (req, res) => {

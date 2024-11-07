@@ -6,7 +6,7 @@ document.querySelector('.login').addEventListener('click', function() {
 });
 
 document.querySelector('.signup').addEventListener('click', function() {
-    window.location.href = 'reg.html'; // Navigate to signup page
+    window.location.href = 'register.html'; // Navigate to signup page
 });
 
 

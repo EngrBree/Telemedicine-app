@@ -29,7 +29,7 @@
     <!-- Search and Filter Section -->
     <form id="searchForm">
         <input type="text" id="search" name="search" placeholder="Search by name">
-        <input type="text" id="specialization" name="specialization" placeholder="Filter by specialization">
+        <input type="text" id="specializationFilter" name="specialization" placeholder="Filter by specialization">
         <button type="submit">Search</button>
     </form>
 
@@ -116,32 +116,35 @@
         }
 
         async function fetchDoctors() {
-            try {
-                const response = await fetch('/telemedicine/api/admins/doctorsearch');
-                const doctors = await response.json();
+    try {
+        const response = await fetch('/telemedicine/api/admins/doctorsearch');
+        const doctors = await response.json();
 
-                const tbody = document.getElementById('doctorsTable').querySelector('tbody');
-                tbody.innerHTML = '';
+        const tbody = document.getElementById('doctorsTable').querySelector('tbody');
+        tbody.innerHTML = '';
 
-                doctors.forEach(doctor => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${doctor.id}</td>
-                        <td>${doctor.first_name}</td>
-                        <td>${doctor.last_name}</td>
-                        <td>${doctor.specialization}</td>
-                        <td>${doctor.email}</td>
-                        <td>${doctor.phone}</td>
-                        <td>${JSON.stringify(doctor.schedule, null, 2)}</td>
-                        <td><button>View</button></td>
-                    `;
-                    tbody.appendChild(row);
-                });
-            } catch (error) {
-                console.error('Error fetching doctors:', error);
-            }
-        }
+        doctors.forEach(doctor => {
+            const scheduleDisplay = Array.isArray(doctor.schedule)
+                ? doctor.schedule.map(s => `${s.day_of_week}: ${s.start_time} - ${s.end_time}`).join(', ')
+                : 'No schedule available'; // Fallback if schedule is not defined
 
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${doctor.id}</td>
+                <td>${doctor.first_name}</td>
+                <td>${doctor.last_name}</td>
+                <td>${doctor.specialization}</td>
+                <td>${doctor.email}</td>
+                <td>${doctor.phone}</td>
+                <td>${scheduleDisplay}</td>
+                <td><button>View</button></td>
+            `;
+            tbody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Error fetching doctors:', error);
+    }
+}
         document.getElementById('searchForm').addEventListener('submit', function(e) {
             e.preventDefault();
             fetchDoctors();
@@ -158,15 +161,18 @@
                 email: formData.get('email'),
                 phone: formData.get('phone'),
                 password: formData.get('password'),
-                schedule: {}
+                schedule: []
             };
 
             const dayEntries = document.querySelectorAll('.day-entry');
             dayEntries.forEach(dayEntry => {
                 const day = dayEntry.querySelector('input[name="day"]').value;
-                const timeSlots = Array.from(dayEntry.querySelectorAll('input[name="time"]')).map(input => input.value);
+                const timeSlots = Array.from(dayEntry.querySelectorAll('input[name="time"]')).map(input => {
+                    const [start_time, end_time] = input.value.split('-');
+                    return { day_of_week: day, start_time: start_time.trim(), end_time: end_time.trim() };
+                });
                 if (day && timeSlots.length > 0) {
-                    data.schedule[day] = timeSlots;
+                    data.schedule.push(...timeSlots);
                 }
             });
 
@@ -180,6 +186,8 @@
                 const result = await response.json();
                 alert(result.message);
                 fetchDoctors();
+                document.getElementById('addDoctorForm').reset(); // Reset form after submission
+                document.getElementById('scheduleContainer').innerHTML = ''; // Clear the schedule container
             } catch (error) {
                 console.error('Error adding doctor:', error);
             }

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor's Appointments</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button.delete {
+            background-color: red;
+            color: white;
+        }
+
+        button.reschedule {
+            background-color: blue;
+            color: white;
+        }
+
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.4); 
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; 
+            padding: 20px;
+            border: 1px solid #888;
+            width: 300px; 
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>My Appointments</h1>
+        <table id="appointmentsTable">
+            <thead>
+                <tr>
+                    <th>Patient Name</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="appointmentsList">
+                <!-- Appointments will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Reschedule Modal -->
+    <div id="rescheduleModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Reschedule Appointment</h2>
+            <form id="rescheduleForm">
+                <input type="hidden" id="id" name="id">
+                <label for="appointment_datetime">New Date and Time:</label>
+                <input type="datetime-local" id="appointment_datetime" name="appointment_datetime" required>
+                <button type="submit">Reschedule</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAppointments();
+        });
+
+        // Fetch appointments from the backend
+        async function fetchAppointments() {
+            try {
+                const response = await fetch('/telemedicine/api/doctors/appointments', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    const appointmentsList = document.getElementById('appointmentsList');
+                    appointmentsList.innerHTML = ''; // Clear existing appointments
+
+                    data.data.forEach(appointment => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${appointment.patient_name}</td>
+                            <td>${new Date(appointment.appointment_date).toLocaleString()}</td>
+                            <td>${appointment.status}</td>
+                            <td>
+                                <button class="reschedule" onclick="openModal(${appointment.id}, '${appointment.appointment_date}')">Reschedule</button>
+                                <button class="delete" onclick="deleteAppointment(${appointment.id})">Delete</button>
+                            </td>
+                        `;
+                        appointmentsList.appendChild(row);
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching appointments:', error);
+            }
+        }
+
+        // Open the reschedule modal
+        function openModal(appointmentId, currentDate) {
+            const appointmentIdInput = document.getElementById('id');
+            const appointmentDatetimeInput = document.getElementById('appointment_datetime');
+            const rescheduleModal = document.getElementById('rescheduleModal');
+
+            // Format date for datetime-local input
+            const formattedDate = new Date(currentDate).toISOString().slice(0, 16);
+
+            appointmentIdInput.value = appointmentId; // Use the correct appointmentId here
+            appointmentDatetimeInput.value = formattedDate;
+            rescheduleModal.style.display = 'block';
+        }
+
+        // Close the reschedule modal
+        function closeModal() {
+            document.getElementById('rescheduleModal').style.display = 'none';
+        }
+
+        // Handle rescheduling appointment
+        document.getElementById('rescheduleForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const appointmentId = document.getElementById('id').value;
+            const appointment_datetime = document.getElementById('appointment_datetime').value;
+
+            try {
+                const response = await fetch(`/telemedicine/api/doctors/appointments/reschedule/${appointmentId}`, {  // Use appointmentId here
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ appointment_datetime }),
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+                alert(data.message);
+                fetchAppointments(); // Refresh the appointment list
+                closeModal(); // Close the modal after rescheduling
+            } catch (error) {
+                console.error('Error rescheduling appointment:', error);
+            }
+        });
+
+        // Delete appointment
+        async function deleteAppointment(appointmentId) {
+            if (confirm('Are you sure you want to delete this appointment?')) {
+                try {
+                    const response = await fetch(`/telemedicine/api/appointments/${appointmentId}`, {
+                        method: 'DELETE',
+                        credentials: 'include'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+
+                    const data = await response.json();
+                    alert(data.message);
+                    fetchAppointments(); // Refresh the appointment list
+                } catch (error) {
+                    console.error('Error deleting appointment:', error);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

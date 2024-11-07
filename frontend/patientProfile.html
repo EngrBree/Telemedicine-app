@@ -4,183 +4,239 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Patient Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
     <style>
-        /* General styles (same as before) */
+        /* General styling */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
+            background-color: #F3F6FB;
+            display: flex;
         }
 
-        .navbar {
-            background-color: #333;
-            color: #fff;
-            padding: 10px;
-            text-align: right;
-        }
-
-        .navbar a {
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background-color: #1F3A93;
             color: white;
-            padding: 10px;
+            height: 100vh;
+            position: fixed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+        }
+
+        .sidebar a {
+            width: 100%;
+            padding: 15px;
             text-decoration: none;
-            margin-right: 20px;
+            color: white;
+            text-align: center;
+            transition: background-color 0.3s;
+            font-weight: bold;
         }
 
-        .navbar a:hover {
-            background-color: #575757;
-            border-radius: 5px;
+        .sidebar a:hover {
+            background-color: #3A539B;
         }
 
-        .container {
-            margin: 20px;
-        }
-
-        h1 {
+        .sidebar h2 {
             font-size: 24px;
+            color: #F4F4F4;
+            margin-bottom: 20px;
         }
 
-        .welcome {
+        /* Main content */
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            width: calc(100% - 250px);
+            background-color: #FAFAFA;
+        }
+
+        /* Welcome message */
+        .welcome-message {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        /* Dashboard Cards */
+        .dashboard-cards {
+            display: flex;
+            justify-content: space-around;
+            gap: 15px;
+        }
+
+        .card {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            width: 30%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            color: #1F3A93;
+        }
+
+        .card h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        /* Appointments section */
+        .appointments {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             margin-top: 20px;
         }
 
-        .appointments {
-            margin-top: 30px;
-        }
-
         .appointments h2 {
-            display: inline-block;
-        }
-
-        .add-appointment {
-            float: right;
-            padding: 10px 20px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .add-appointment:hover {
-            background-color: #218838;
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 15px;
         }
 
         table {
             width: 100%;
-            margin-top: 20px;
             border-collapse: collapse;
+            margin-top: 15px;
+            background-color: #FAFAFA;
         }
 
-        table, th, td {
+        th, td {
+            padding: 12px;
+            text-align: center;
             border: 1px solid #ddd;
-            padding: 8px;
         }
 
         th {
-            background-color: #333;
+            background-color: #1F3A93;
             color: white;
-        }
-
-        td {
-            text-align: center;
         }
 
         .actions button {
             padding: 5px 10px;
             margin: 2px;
             cursor: pointer;
+            border-radius: 5px;
+            border: none;
+            color: white;
         }
 
         .edit-btn {
-            background-color: #ffc107;
-            color: white;
-            border: none;
-            border-radius: 5px;
+            background-color: #FFC107;
         }
 
         .delete-btn {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 5px;
+            background-color: #DC3545;
         }
 
         /* Modal styling */
-        .modal {
+        #appointment-modal, #profile-modal {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.5);
             justify-content: center;
             align-items: center;
         }
 
-        .modal-content {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 5px;
-    width: 600px;  /* Increase width */
-    max-height: 700px;  /* Set maximum height */
-    overflow-y: auto;  /* Add scrolling for content */
-}
+        #appointment-modal div, #profile-modal div {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+        }
 
-        .modal-content label {
-            display: block;
+        .modal-header {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #1F3A93;
+        }
+
+        .modal input, .modal select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .modal button {
+            padding: 10px 15px;
+            background-color: #1F3A93;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
             margin-top: 10px;
         }
 
-        .modal-content input, .modal-content select {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            border-radius: 4px;
-            max-height: 200px; /* Allow enough space for scrolling */
-            overflow:visible; 
-
+        .modal-close-btn {
+            background-color: #ccc;
+            color: #333;
         }
 
-        .modal-content button {
-            margin-top: 15px;
-            padding: 10px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-     
-
- 
-
-        .modal-content button:hover {
-            background-color: #218838;
-        }
-
-        .close-btn {
-            float: right;
-            cursor: pointer;
+        /* Map styling */
+        #hospitalMap {
+            height: 500px;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
 
-    <div class="navbar">
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <h2>Patient Dashboard</h2>
         <a href="index.html">Home</a>
         <a href="#" id="profile-btn">Profile</a>
-
+        <a href="#" id="show-appointments-btn">Appointments</a>
         <a href="#" id="logout-btn">Logout</a>
     </div>
 
-    <div class="container">
-        <h1 class="welcome">Welcome, <span id="username"></span></h1>
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <div class="welcome-message" id="welcome-message">Welcome, </div>
 
-        <div class="appointments">
+        <!-- Dashboard Overview -->
+        <div class="dashboard-cards">
+            <div class="card">
+                <h3>Upcoming Appointments</h3>
+                <p>3</p>
+            </div>
+            <div class="card">
+                <h3>Patient Statistics</h3>
+                <p>20 Active Patients</p>
+            </div>
+            <div class="card">
+                <h3>Notifications</h3>
+                <p>2 New Messages</p>
+            </div>
+        </div>
+        
+        <!-- Map Section -->
+        <div id="hospitalMap"></div>
+
+        <!-- Appointments Section -->
+        <div class="appointments" id="appointments" style="display: none;">
             <h2>Your Appointments</h2>
-            <button class="add-appointment" id="add-appointment-btn">Add Appointment</button>
+            <button class="modal-button" id="add-appointment-btn">Add Appointment</button>
 
             <table id="appointments-table">
                 <thead>
@@ -197,100 +253,89 @@
                 </tbody>
             </table>
 
-            <!-- If no appointments -->
             <p id="no-appointments-message" style="display:none;">No appointments yet</p>
-
         </div>
     </div>
 
-    <!-- Modal for adding an appointment -->
-    <div class="modal" id="appointment-modal">
-        <div class="modal-content">
-            <span class="close-btn" id="close-modal">&times;</span>
-            <h2>Add New Appointment</h2>
+    <!-- Modals -->
+    <!-- Add Appointment Modal -->
+    <div id="appointment-modal" class="modal">
+        <div>
+            <h3 class="modal-header">Add Appointment</h3>
             <form id="appointment-form">
-                <label for="appointment-date">Appointment Date:</label>
+                <label for="appointment-date">Date:</label>
                 <input type="date" id="appointment-date" required>
-
-                <label for="appointment-time">Appointment Time:</label>
+                <label for="appointment-time">Time:</label>
                 <input type="time" id="appointment-time" required>
-
                 <label for="doctor-id">Doctor:</label>
-                <select id="doctor-id" required>
-                    <option value="" disabled selected>Select a doctor</option>
-                    <!-- Option values should be dynamically populated here -->
-                </select>
-                <p id="no-doctors-message" style="display:none; color: red;">No doctors available</p>
-
-
-                <button type="submit">Create Appointment</button>
+                <select id="doctor-id" required></select>
+                <div id="no-doctors-message" style="display:none; color:red;">
+                    No doctors available. Please try again later.
+                </div>
+                <button type="submit">Save Appointment</button>
             </form>
+            <button id="close-modal" class="modal-close-btn">Close</button>
         </div>
     </div>
-    <!-- Modal for viewing and editing the profile -->
-<div class="modal" id="profile-modal">
-    <div class="modal-content">
-        <span class="close-btn" id="close-profile-modal">&times;</span>
-        <h2>Edit Profile</h2>
-        <form id="profile-form">
-            <label for="first-name">First Name:</label>
-            <input type="text" id="first-name" required>
 
-            <label for="last-name">Last Name:</label>
-            <input type="text" id="last-name" required>
-
-            <label for="email">Email:</label>
-            <input type="email" id="email" required>
-
-            <label for="phone">Phone Number:</label>
-            <input type="tel" id="phone" required>
-            
-            <label for="date_of_birth">DOB:</label>
-            <input type="date" id="date_of_birth" required>
-            
-            <label for="gender">Gender:</label>
-            <input type="text" id="gender" required>
-            
-            <label for="address">Address:</label>
-            <input type="text" id="address" required>
-            
-
-            <button type="submit">Save Changes</button>
-        </form>
+    <!-- Profile Modal -->
+    <div id="profile-modal" class="modal">
+        <div>
+            <h3 class="modal-header">Edit Profile</h3>
+            <form id="profile-form">
+                <label for="first-name">First Name:</label>
+                <input type="text" id="first-name" required>
+                <label for="last-name">Last Name:</label>
+                <input type="text" id="last-name" required>
+                <label for="email">Email:</label>
+                <input type="email" id="email" required>
+                <label for="phone">Phone:</label>
+                <input type="text" id="phone" required>
+                <label for="date_of_birth">Date of Birth:</label>
+                <input type="date" id="date_of_birth" required>
+                <label for="gender">Gender:</label>
+                <select id="gender">
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                </select>
+                <label for="address">Address:</label>
+                <input type="text" id="address">
+                <button type="submit">Save Changes</button>
+            </form>
+            <button id="close-profile-modal" class="modal-close-btn">Close</button>
+        </div>
     </div>
-</div>
-
 
     <script>
         
         document.addEventListener('DOMContentLoaded', function () {
             fetchUserData();
             fetchAppointments();
-
+        
             // Show the modal when 'Add Appointment' is clicked
             const addAppointmentBtn = document.getElementById('add-appointment-btn');
             const modal = document.getElementById('appointment-modal');
             const closeModalBtn = document.getElementById('close-modal');
-
+        
             addAppointmentBtn.addEventListener('click', function () {
                 modal.style.display = 'flex'; // Show modal
                 fetchDoctors(); // Fetch available doctors to fill the select dropdown
             });
-
+        
             // Close the modal when the 'X' is clicked
             closeModalBtn.addEventListener('click', function () {
                 modal.style.display = 'none';
             });
-
+        
             // Submit the appointment form
             const appointmentForm = document.getElementById('appointment-form');
             appointmentForm.addEventListener('submit', function (event) {
                 event.preventDefault(); // Prevent the form from submitting normally
-
+        
                 const appointmentDate = document.getElementById('appointment-date').value;
                 const appointmentTime = document.getElementById('appointment-time').value;
                 const doctorId = document.getElementById('doctor-id').value;
-
+        
                 // Create appointment data object
                 const appointmentData = {
                     patient_id:patientId,
@@ -298,7 +343,7 @@
                     appointment_time: appointmentTime,
                     doctor_id: doctorId
                 };
-
+        
                 // Send POST request to create a new appointment
                 fetch('/telemedicine/api/patients/createSchedule', {
                     method: 'POST',
@@ -322,17 +367,16 @@
                 });
             });
         });
-
+        
         // Fetch available doctors and populate the dropdown
-  // Fetch available doctors and populate the dropdown
-function fetchDoctors() {
-    fetch('/telemedicine/api/admins/doctorsearch', {
-    method: 'GET',
-    credentials: 'include', // Include cookies with the request
-    headers: {
+        function fetchDoctors() {
+        fetch('/telemedicine/api/admins/doctorsearch', {
+        method: 'GET',
+        credentials: 'include', // Include cookies with the request
+        headers: {
         'Content-Type': 'application/json'
-    }
-}) // Make sure this URL is correct
+        }
+        }) // Make sure this URL is correct
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -341,10 +385,10 @@ function fetchDoctors() {
         })
         .then(doctors => {
             console.log('Doctors data:', doctors); // Log the fetched doctors data
-
+        
             const doctorSelect = document.getElementById('doctor-id');
             doctorSelect.innerHTML = ''; // Clear existing options
-
+        
             // Check if doctors array is empty
             if (!Array.isArray(doctors) || doctors.length === 0) {
                 console.error('No doctors available');
@@ -353,40 +397,39 @@ function fetchDoctors() {
             } else {
                 document.getElementById('no-doctors-message').style.display = 'none'; // Hide message if doctors are found
             }
-
+        
             doctors.forEach(doctor => {
                 const option = document.createElement('option');
                 option.value = doctor.id;
                 option.textContent = doctor.name;
                 doctorSelect.appendChild(option);
             });
-
+        
             // Log to confirm select element is populated
             console.log('Doctor select options:', doctorSelect.innerHTML);
         })
         .catch(error => console.error('Error fetching doctors:', error));
-}
-
-
-
-
+        }
+        
+        
+        
+        
         // Fetch user profile (for username)
         let patientId;
         function fetchUserData() {
-            fetch('/telemedicine/api/patients/profile') // Adjust the API endpoint
+            fetch('/telemedicine/api/patients/profile') 
                 .then(response => response.json())
                 .then(data => {
-                    // Update the username display
-                    document.getElementById('username').textContent = data.first_name;
+                    // Update the username display in the welcome message
+                    document.getElementById('welcome-message').textContent = `Welcome, ${data.first_name}`;
                     patientId = data.id; 
-
                 })
                 .catch(error => console.error('Error fetching user data:', error));
         }
-
+        
         // Fetch appointments data (same as before)
         function fetchAppointments() {
-    fetch('/telemedicine/api/patients/schedules') // Adjust the API endpoint if necessary
+        fetch('/telemedicine/api/patients/schedules') // Adjust the API endpoint if necessary
         .then(response => {
             // Check if the response is successful
             if (!response.ok) {
@@ -399,7 +442,7 @@ function fetchDoctors() {
             
             const appointmentsList = document.getElementById('appointments-list');
             const noAppointmentsMessage = document.getElementById('no-appointments-message');
-
+        
             // Check if data is an array and has appointments
             if (!Array.isArray(data) || data.length === 0) {
                 noAppointmentsMessage.style.display = 'block';
@@ -408,14 +451,14 @@ function fetchDoctors() {
             } else {
                 noAppointmentsMessage.style.display = 'none';
             }
-
+        
             // Clear existing table rows
             appointmentsList.innerHTML = '';
-
+        
             // Populate appointments table
             data.forEach(appointment => {
                 const row = document.createElement('tr');
-
+        
                 row.innerHTML = `
                     <td>${appointment.appointment_date}</td>
                     <td>${appointment.appointment_time}</td>
@@ -426,35 +469,35 @@ function fetchDoctors() {
                         <button class="delete-btn">Delete</button>
                     </td>
                 `;
-
+        
                 appointmentsList.appendChild(row);
             });
         })
         .catch(error => console.error('Error fetching appointments:', error));
-}
-
-
+        }
+        
+        
         document.addEventListener('DOMContentLoaded', function () {
-    // Profile modal elements
-    const profileBtn = document.getElementById('profile-btn');
- // Adjust the selector for your profile link
-    const profileModal = document.getElementById('profile-modal');
-    const closeProfileModalBtn = document.getElementById('close-profile-modal');
-    
-    // Open the profile modal when "Profile" is clicked
-    profileBtn.addEventListener('click', function (event) {
+        // Profile modal elements
+        const profileBtn = document.getElementById('profile-btn');
+        // Adjust the selector for your profile link
+        const profileModal = document.getElementById('profile-modal');
+        const closeProfileModalBtn = document.getElementById('close-profile-modal');
+        
+        // Open the profile modal when "Profile" is clicked
+        profileBtn.addEventListener('click', function (event) {
         event.preventDefault();
         profileModal.style.display = 'flex'; // Show modal
         fetchUserProfile(); // Fetch the current user's profile data
-    });
-
-    // Close the profile modal
-    closeProfileModalBtn.addEventListener('click', function () {
+        });
+        
+        // Close the profile modal
+        closeProfileModalBtn.addEventListener('click', function () {
         profileModal.style.display = 'none';
-    });
-
-    // Fetch user profile data and pre-fill the form
-    function fetchUserProfile() {
+        });
+        
+        // Fetch user profile data and pre-fill the form
+        function fetchUserProfile() {
         fetch('/telemedicine/api/patients/profile')
             .then(response => response.json())
             .then(data => {
@@ -463,18 +506,19 @@ function fetchDoctors() {
                 document.getElementById('last-name').value = data.last_name;
                 document.getElementById('email').value = data.email;
                 document.getElementById('phone').value = data.phone;
-                document.getElementById('date_of_birth').value,
-                document.getElementById('gender').value,
-                document.getElementById('address').value
+                document.getElementById('date_of_birth').value = data.date_of_birth;
+                document.getElementById('gender').value = data.gender;
+                document.getElementById('address').value = data.address;
+        
             })
             .catch(error => console.error('Error fetching profile data:', error));
-    }
-
-    // Handle profile form submission
-    const profileForm = document.getElementById('profile-form');
-    profileForm.addEventListener('submit', function (event) {
+        }
+        
+        // Handle profile form submission
+        const profileForm = document.getElementById('profile-form');
+        profileForm.addEventListener('submit', function (event) {
         event.preventDefault(); // Prevent the form from submitting normally
-
+        
         // Gather the updated profile data
         const updatedProfileData = {
             first_name: document.getElementById('first-name').value,
@@ -484,12 +528,12 @@ function fetchDoctors() {
             date_of_birth:document.getElementById('date_of_birth').value,
             gender:document.getElementById('gender').value,
             address:document.getElementById('address').value
-
+        
         };
-
+        
         // Send POST request to update the profile
-        fetch('/telemedicine/api/patients/profile/update', {
-            method: 'POST',
+        fetch('/telemedicine/api/patients/edit-profile', {
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -509,10 +553,91 @@ function fetchDoctors() {
         .catch(error => {
             console.error('Error updating profile:', error);
         });
-    });
-});
-
-    </script>
-
+        });
+        
+        document.getElementById('logout-btn').addEventListener('click', function() {
+        // Call the backend to log out the user
+        fetch('/telemedicine/api/patients/logout', {
+        method: 'POST', // Assuming the logout route on your server is a POST request
+        headers: {
+            'Content-Type': 'application/json'
+        }
+        })
+        .then(response => {
+        if (response.ok) {
+            // Redirect the user to the login page after successful logout
+            window.location.href = '/login';
+        } else {
+            console.error('Logout failed');
+        }
+        })
+        .catch(error => {
+        console.error('Error logging out:', error);
+        });
+        });
+        document.getElementById('show-appointments-btn').addEventListener('click', function () {
+        const appointmentsContainer = document.getElementById('appointments');
+        appointmentsContainer.style.display = appointmentsContainer.style.display === 'none' ? 'block' : 'none';
+        });
+        
+        
+        });
+        
+        document.addEventListener('DOMContentLoaded', function () {
+        // Initialize the map centered on a default location
+        const map = L.map('hospitalMap').setView([0, 0], 13);
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+        
+        // Function to fetch nearby hospitals
+        async function fetchNearbyHospitals(lat, lon) {
+        const latOffset = 0.02;
+        const lonOffset = 0.02;
+        const minLat = lat - latOffset;
+        const maxLat = lat + latOffset;
+        const minLon = lon - lonOffset;
+        const maxLon = lon + lonOffset;
+        
+        // Nominatim API call to find hospitals within a bounding box around the user's location
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&amenity=hospital&bounded=1&viewbox=${minLon},${maxLat},${maxLon},${minLat}`);
+        const hospitals = await response.json();
+        
+        // Add a default marker for each hospital
+        hospitals.forEach(hospital => {
+            const hospitalLat = parseFloat(hospital.lat);
+            const hospitalLon = parseFloat(hospital.lon);
+            L.marker([hospitalLat, hospitalLon])
+                .addTo(map)
+                .bindPopup(`<b>${hospital.display_name}</b>`);
+        });
+        }
+        
+        // Geolocation to get the user's location and display nearby hospitals
+        if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+            const { latitude, longitude } = position.coords;
+            map.setView([latitude, longitude], 13);
+        
+            // Add the default marker for the user's location
+            L.marker([latitude, longitude])
+                .addTo(map)
+                .bindPopup("<b>You are here!</b>")
+                .openPopup();
+        
+            // Fetch and display nearby hospitals
+            fetchNearbyHospitals(latitude, longitude);
+        }, () => {
+            alert("Unable to retrieve your location.");
+        });
+        } else {
+        alert("Geolocation is not supported by your browser.");
+        }
+        });
+        
+        </script>
 </body>
 </html>
